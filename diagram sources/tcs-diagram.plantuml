@@ -1,0 +1,131 @@
+@startuml 
+title Traffic Clearance Service
+| v | Vessel
+start
+: Prepare to enter or depart from VTS area;
+'space label
+label send1
+label send2
+'real label
+label send
+: Send message to VTS|
+| vts | VTS
+: Receive message from vessel |
+if (Grant clearance?) then (Deny)
+    label deny
+    : Send denial reply |
+    | v |
+    : Receive denial |
+    end
+elseif (Grant) then (Yes)
+    | vts |
+    : Send approval reply with necessary assignment|
+    | v |
+    : Receive clearance|
+    : Send acknowledge receipt |
+    | vts |
+    goto receive
+else (Propose or require change)
+    | vts |
+    label cp1
+    : Create proposal ;
+    : Send proposal |
+    | v |
+    : Receive proposal |
+    if (Accept proposal?) then (Reject)
+        : Amend proposal ;
+        label send2
+        goto send1
+    else (Accept)
+        split 
+            :Continue vessel's voyage;
+            if (Changes required to plan) then (Yes)
+                : Amend proposal ;
+                goto send
+            else (No)
+                end
+            endif
+        split again
+            : Send approval acknowledgment |
+            | vts |
+            label receive
+            :Receive acknowledgment|
+            : Monitor vessel's manuever;
+            if (Changes required to plan) then (Yes)
+                if (Propose new plan) then (Deny)
+                    end
+                else (Yes)
+                    : Create proposal ;
+                    goto cp1
+                endif
+            else (No)
+                end
+            endif 
+        end split 
+    endif 
+endif 
+@enduml 
+
+@startuml
+hide empty description
+state Vessel {
+    state "Prepare to enter or depart from VTS area" as prepare
+    state "Send message to VTS" as sendVTS
+    state "Receive approval" as approvalFromVTS
+    state "Receive denial" as denialFromVTS
+    state "Send acknowledgement receipt" as ackVTS
+    state "Receive proposal" as proposalFromVTS
+    state accept <<choice>> 
+    state "Amend proposal" as amend 
+    state "Send approval acknowledgement" as acceptProposal
+    state "Continue vessel's voyage" as continue
+    state change <<choice>>
+    state "Cancel" as cancel
+}
+
+state VTS {
+    state "Receive message from vessel" as receiveVessel
+    state approveMessage <<choice>>
+    state "Send denial reply" as denialVessel
+    state "Send approval reply" as approvalVessel
+    state "Create proposal" as createProposal 
+    state "Send proposal" as sendProposal
+    state "Receive acknowledgement" as receiveAck
+    state "Monitor vessel's maneuver" as monitor
+    state "Receive cancellation" as receiveCancel
+    state changesRequired <<choice>>
+}
+
+[*] --> prepare 
+prepare --> sendVTS
+sendVTS --> receiveVessel
+receiveVessel --> approveMessage
+approveMessage --> denialVessel : Deny request
+approveMessage --> approvalVessel : Approve request 
+approveMessage --> createProposal : Propose or require change
+denialVessel --> denialFromVTS
+denialFromVTS --> [*]
+denialFromVTS --> amend
+approvalVessel --> approvalFromVTS
+approvalFromVTS --> ackVTS
+ackVTS --> receiveAck
+ackVTS --> continue 
+receiveAck --> monitor
+createProposal --> sendProposal
+sendProposal --> proposalFromVTS
+proposalFromVTS --> accept
+accept --> amend : Reject
+accept --> acceptProposal : Accept
+acceptProposal --> receiveAck
+acceptProposal --> continue
+continue --> change : Change required to plan?
+change --> amend : Yes
+change --> [*] : No 
+amend --> sendVTS
+monitor --> changesRequired : Changes required to plan?
+changesRequired --> [*] : No
+changesRequired --> createProposal : Propose new plan
+sendVTS --> cancel
+cancel --> receiveCancel
+receiveCancel --> [*]
+@enduml

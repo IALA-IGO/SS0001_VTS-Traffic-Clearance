@@ -1,0 +1,69 @@
+@startuml TCS Data model
+class VTSDigitalInformationMessage
+VTSDigitalInformationMessage : string journeyId
+VTSDigitalInformationMessage : MRN portCallId
+VTSDigitalInformationMessage : MRN vesselId
+VTSDigitalInformationMessage : string gml:id
+VTSDigitalInformationMessage : string referenceMessageId
+VTSDigitalInformationMessage : dateTime reportedAt
+VTSDigitalInformationMessage : MRN reportedBy
+VTSDigitalInformationMessage : string comment
+VTSDigitalInformationMessage : URN incomingVoyage
+VTSDigitalInformationMessage : URN outgoingVoyage
+VTSDigitalInformationMessage : TrafficClearanceMessage trafficClearanceMessage
+
+class TrafficClearanceMessage {
+    enum subjectOfCommunication 
+    enum messageStatus
+    dateTime effectiveTime
+    string windowBefore
+    string windowAfter
+    decimal draftOrDraught
+    decimal airDraft
+    VTSInformationLocation vtsInformationLocation
+}
+
+VTSDigitalInformationMessage "1" *-- "0..2" TrafficClearanceMessage
+TrafficClearanceMessage -- subjectOfCommunication
+VTSDigitalInformationMessage -- messageStatus
+
+class VTSInformationLocation
+VTSInformationLocation : URN locationURN
+VTSInformationLocation : enum locationDirection
+VTSInformationLocation : gml:PointType point
+VTSInformationLocation : gml:PolygonType polygon
+VTSInformationLocation : S100_ArcByCenterPoint arcByCenterPoint
+VTSInformationLocation : S100_CircleByCenterPoint circle
+
+TrafficClearanceMessage "1" *-- "1..2" VTSInformationLocation
+VTSInformationLocation -- locationDirection
+
+enum subjectOfCommunication {
+1 Arrival Anchoring Operation
+2 Arrival Berth
+3 Arrival Portarea
+4 Arrival Vtsarea
+5 Departure Anchoring Operation
+6 Departure Berth
+7 Departure Portarea
+8 Departure Vtsarea
+9 Pilotage
+10 Port Visit
+11 Ready To Sail Operation
+}
+
+enum messageStatus
+messageStatus : 1 Requested
+messageStatus : 2 Required
+messageStatus : 3 Confirmed
+messageStatus : 4 Denied
+messageStatus : 5 Cancelled
+
+enum locationDirection {
+1 From
+2 To    
+}
+
+hide methods
+hide circle
+@enduml

@@ -1,0 +1,566 @@
+@startuml uc1
+title Use Case 1 - Departure
+actor       Mariner          as v
+participant "On-board systems" as vs
+participant "TCS Service"    as vtss
+actor       VTS             as vts
+
+v --> v : Prepare departure from berth
+v --> vs : Generate traffic clearance message
+activate vs
+vs --> vtss : Send message
+note left
+journeyId: urn:mrn:iala:journey:duckville:12345
+vesselId: urn:mrn:imo:imo-number:0031300
+gml:id: id-d67dcadb-41fe-4878-bdd7-8954ebd2f9b8
+reportedAt: 2100-01-01T12:00:00Z
+reportedBy: urn:mrn:mcp:entity:duckville:donald-duck
+clearanceMessage:
+    subject: Departure Berth
+    effectiveTime: 2100-01-01T14:00:00Z
+    windowAfter: 00:10
+    messageStatus: Requested
+    affefctedArea: 
+        locationURN: urn:mrn:iala:location:duckville:berth:313
+        locationType: From
+end note 
+activate vtss
+vtss --> vs : Acknowledge message
+deactivate vs
+vtss --> vts : Notify of message
+deactivate vtss
+vts --> vts : Decide if departure is ok
+vts --> vts : Decide new suggested departure window if required
+vts --> vtss : Reply to vessel
+activate vtss
+vtss --> vtss : use original gml:id as referenceMessageId
+vtss --> vtss : generate gml:id
+vtss --> vs : Send message
+note right
+journeyId: urn:mrn:iala:journey:duckville:12345
+vesselId: urn:mrn:imo:imo-number:0031300
+gml:id: id-83583780-75a9-403a-9e25-c39279dacc5d
+referenceMessageId: id-d67dcadb-41fe-4878-bdd7-8954ebd2f9b8
+reportedAt: 2100-01-01T12:05:00Z
+reportedBy: urn:mrn:mcp:entity:duckville:donald-duck
+clearanceMessage:
+    subject: Departure Berth
+    effectiveTime: 2100-01-01T15:00:00Z
+    windowBefore: 00:10
+    messageStatus: Requested
+    affefctedArea: 
+        locationURN: urn:mrn:iala:location:duckville:berth:313
+        locationType: From
+end note 
+activate vs
+vs --> vtss : Acknowledge message
+deactivate vtss
+vs --> v : Notify of message
+deactivate vs
+v --> vs : Accept revised ETD
+activate vs
+vs --> vs : use proposal gml:id as referenceMessageId
+vs --> vs : generate gml:id
+vs --> vtss : Acknowledge accepted revised ETD
+note left
+journeyId: urn:mrn:iala:journey:duckville:12345
+vesselId: urn:mrn:imo:imo-number:0031300
+gml:id: id-c80bd6c2-39af-4f3e-bcde-7a2ab45ac37a
+referenceMessageId: id-83583780-75a9-403a-9e25-c39279dacc5d
+reportedAt: 2100-01-01T12:05:00Z
+reportedBy: urn:mrn:mcp:entity:duckville:donald-duck
+clearanceMessage:
+    subject: Departure Berth
+    effectiveTime: 2100-01-01T15:00:00Z
+    windowBefore: 00:10
+    messageStatus: Confirmed
+    affefctedArea: 
+        locationURN: urn:mrn:iala:location:duckville:berth:313
+        locationType: From
+end note 
+activate vtss
+vtss --> vs : Acknowledge message
+deactivate vs
+vtss --> vts : Notify of acknowledgment 
+deactivate vtss
+@enduml
+
+@startuml uc2a
+title Use Case 2a - Passing through VTS area with direct confirmation
+actor       Mariner          as v
+participant "On-board systems" as vs
+participant "TCS Service"    as vtss
+actor       VTS             as vts
+
+v --> v : Notice that route goes through a VTS area
+v --> vs : Instruct system to send route plan to VTS
+activate vs
+vs --> vtss : Send schedule and request for traffic clearance
+activate vtss
+vtss --> vs : Acknowledge message
+deactivate vs
+vtss --> vts : Notify of request
+deactivate vtss
+vts --> vts : Determine if route and schedule is suitable
+vts --> vtss : Confirm plan
+activate vtss
+vtss --> vtss : use original gml:id as referenceMessageId
+vtss --> vtss : generate gml:id
+vtss --> vs : Send message
+activate vs
+vs --> vtss : Acknowledge message
+deactivate vtss
+vs --> v : Notify of confirmation
+deactivate vs
+v --> v : Enter VTS area
+@enduml
+
+@startuml uc2b
+title Use Case 2b - Passing through VTS area with changes
+actor       Mariner          as v
+participant "On-board systems" as vs
+participant "TCS Service"    as vtss
+actor       VTS             as vts
+
+v --> v : Notice that route goes through a VTS area
+v --> vs : Instruct system to send route plan to VTS
+activate vs
+vs --> vtss : Send schedule and request for traffic clearance
+activate vtss
+vtss --> vs : Acknowledge message
+deactivate vs
+vtss --> vts : Notify of request
+deactivate vtss
+vts --> vts : Determine if route and schedule is suitable
+vts --> vts : Generate change to plan
+vts --> vtss : Send new RTA to vessel
+activate vtss
+vtss --> vtss : use original gml:id as referenceMessageId
+vtss --> vtss : generate gml:id
+vtss --> vs : Send message
+activate vs
+vs --> vtss : Acknowledge message
+deactivate vtss
+vs --> v : Notify of change request
+deactivate vs
+v --> vs : Revise route
+activate vs
+vs --> vs : use proposal gml:id as referenceMessageId
+vs --> vs : generate gml:id
+vs --> vtss : Acknowledge approval of revised route 
+activate vtss
+vtss --> vs : Acknowledge message
+deactivate vs
+vtss --> vts : Notify of approval
+deactivate vtss
+v --> v : Enter VTS area
+@enduml
+
+@startuml uc3
+title Use Case 3 Arriving vessel with multiple rounds of message sending
+actor       Mariner          as v
+participant "On-board systems" as vs
+participant "TCS Service"    as vtss
+actor       VTS             as vts
+
+v --> v : Before entering VTS area, determine it will be entered
+v --> vs : Instruct system to send schedule to VTS
+activate vs
+vs --> vtss : Request traffic clearance to enter given area
+activate vtss 
+vtss --> vs : Acknowledge message
+deactivate vs
+vtss --> vts : Notify of request
+deactivate vtss
+vts --> vts : Determine if schedule and planned route is suitable
+vts --> vts : Prepare new schedule
+vts --> vtss : Send new RTA to vessel
+activate vtss
+vtss --> vtss : use original gml:id as referenceMessageId
+vtss --> vtss : generate gml:id
+vtss --> vs : Send message
+activate vs
+vs --> vtss : Acknowledge message
+deactivate vtss
+vs --> v : Notify of change request
+deactivate vs
+v --> v : Determine that proposale is not acceptable
+v --> v : Revise route
+v --> vs : Send revised schedule to VTS
+activate vs
+vs --> vs : use proposal gml:id as referenceMessageId
+vs --> vs : generate gml:id
+vs --> vtss : Send message
+activate vtss
+vtss --> vs : Acknowledge message
+deactivate vs
+vtss --> vts : Notify of request
+deactivate vtss
+vts --> vts : Determine if schedule and planned route is suitable
+vts --> vtss : Confirm schedule
+activate vtss
+vtss --> vtss : use original proposal as referenceMessageId
+vtss --> vtss : generate gml:id
+vtss --> vs : Send confirmation to vessel
+activate vs
+vs --> vtss : Acknowledge message
+vs --> vtss : Acknowledge message
+deactivate vtss
+vs --> v : Notify of confirmation
+deactivate vs
+v --> v : Enter VTS area
+@enduml
+
+@startuml uc4
+title Use Case 4 Assigning anchorage position
+actor       Mariner          as v
+participant "On-board systems" as vs
+participant "TCS Service"    as vtss
+actor       VTS             as vts
+
+v --> v : Mariner requires anchorage
+v --> vs : Generate anchorage request message
+activate vs
+vs --> vtss : Send message
+note left
+journeyId: urn:mrn:iala:journey:duckville:12345
+vesselId: urn:mrn:imo:imo-number:0031300
+gml:id: id-d67dcadb-41fe-4878-bdd7-8954ebd2f9b8
+reportedAt: 2100-01-01T12:00:00Z
+reportedBy: urn:mrn:mcp:entity:duckville:donald-duck
+clearanceMessage:
+    subject: Arrival Anchoring Operation
+    effectiveTime: 2100-01-01T14:00:00Z
+    windowAfter: 00:10
+    draftOrDraught: 3.13
+    messageStatus: Requested
+    affectedArea:
+        geometry:
+            gml:Point: 0.0 0.0
+        locationType: To
+end note 
+activate vtss
+vtss --> vs : Acknowledge message
+deactivate vs
+vtss --> vts : Notify of message
+deactivate vtss
+vts --> vts : Decide if anchorage is ok and verify depth
+vts --> vts : Decide new anchorage time and location
+vts --> vtss : Reply to vessel
+activate vtss
+vtss --> vtss : use original gml:id as referenceMessageId
+vtss --> vtss : generate gml:id
+vtss --> vs : Send message
+note right
+journeyId: urn:mrn:iala:journey:duckville:12345
+vesselId: urn:mrn:imo:imo-number:0031300
+gml:id: id-83583780-75a9-403a-9e25-c39279dacc5d
+referenceMessageId: id-d67dcadb-41fe-4878-bdd7-8954ebd2f9b8
+reportedAt: 2100-01-01T12:05:00Z
+reportedBy: urn:mrn:mcp:entity:duckville:donald-duck
+clearanceMessage:
+    subject: Arrival Anchoring Operation
+    effectiveTime: 2100-01-01T15:00:00Z
+    windowBefore: 00:10
+    draftOrDraught: 3.13
+    messageStatus: Requested
+    affectedArea:
+        geometry:
+            gml:Point: 1.0 0.0
+        locationType: To
+end note 
+activate vs
+vs --> vtss : Acknowledge message
+deactivate vtss
+vs --> v : Notify of message
+deactivate vs
+v --> vs : Accept RTD and location
+activate vs
+vs --> vs : use proposal gml:id as referenceMessageId
+vs --> vs : generate gml:id
+vs --> vtss : Acknowledge accepted RTD
+note left
+journeyId: urn:mrn:iala:journey:duckville:12345
+vesselId: urn:mrn:imo:imo-number:0031300
+gml:id: id-c80bd6c2-39af-4f3e-bcde-7a2ab45ac37a
+referenceMessageId: id-83583780-75a9-403a-9e25-c39279dacc5d
+reportedAt: 2100-01-01T12:05:00Z
+reportedBy: urn:mrn:mcp:entity:duckville:donald-duck
+clearanceMessage:
+    subject: Arrival Anchoring Operation
+    effectiveTime: 2100-01-01T15:00:00Z
+    windowBefore: 00:10
+    draftOrDraught: 3.13
+    messageStatus: Confirmed
+    affectedArea:
+        geometry:
+            gml:Point: 1.0 0.0
+        locationType: To
+end note 
+activate vtss
+vtss --> vs : Acknowledge message
+deactivate vs
+vtss --> vts : Notify of acknowledgment 
+deactivate vtss
+@enduml
+
+@startuml uc5
+title Use Case 5 - Transition from achorage to berth
+actor       Mariner          as v
+participant "On-board systems" as vs
+participant "TCS Service"    as vtss
+actor       VTS             as vts
+
+v --> v : Prepare to transition from acnhorage to berth
+v --> vs : Send transition message to VTS
+activate vs
+vs --> vs : Generate message
+note left
+journeyId: urn:mrn:iala:journey:duckville:12345
+vesselId: urn:mrn:imo:imo-number:0031300
+gml:id: id-d67dcadb-41fe-4878-bdd7-8954ebd2f9b8
+reportedAt: 2100-01-01T12:00:00Z
+reportedBy: urn:mrn:mcp:entity:duckville:donald-duck
+clearanceMessage: [ 
+    subject: Departure Anchoring Operation
+    effectiveTime: 2100-01-01T14:00:00Z
+    windowAfter: 00:10
+    draftOrDraught: 3.13
+    messageStatus: Requested
+    affectedArea:
+        geometry:
+            gml:Point: 0.0 0.0
+        locationType: From
+    ,
+    subject: Arrival Berth
+    effectiveTime: 2100-01-01T15:00:00Z
+    windowBefore: 00:30
+    messageStatus: Requested
+    affefctedArea: 
+        locationURN: urn:mrn:iala:location:duckville:berth:313
+        locationType: To
+end note 
+vs --> vtss : Send message
+vtss --> vs : Acknowledge message
+deactivate vs
+vtss --> vts : Notify of request
+deactivate vtss
+vts --> vts : Confirm message
+vts --> vtss : Send confirmation
+activate vtss
+note right
+journeyId: urn:mrn:iala:journey:duckville:12345
+vesselId: urn:mrn:imo:imo-number:0031300
+gml:id: id-1671189a-d378-431e-88c2-b3b66e714249
+referenceMessageId: id-d67dcadb-41fe-4878-bdd7-8954ebd2f9b8
+reportedAt: 2100-01-01T12:01:00Z
+reportedBy: urn:mrn:mcp:entity:duckville:donald-duck
+clearanceMessage: [ 
+    subject: Departure Anchoring Operation
+    effectiveTime: 2100-01-01T14:00:00Z
+    windowAfter: 00:10
+    draftOrDraught: 3.13
+    messageStatus: Confirmed
+    affectedArea:
+        geometry:
+            gml:Point: 0.0 0.0
+        locationType: From
+    ,
+    subject: Arrival Berth
+    effectiveTime: 2100-01-01T15:00:00Z
+    windowBefore: 00:30
+    messageStatus: Confirmed
+    affefctedArea: 
+        locationURN: urn:mrn:iala:location:duckville:berth:313
+        locationType: To
+end note 
+vtss --> vtss : use original gml:id as referenceMessageId
+vtss --> vtss : generate gml:id
+vtss --> vs : Send confirmation
+activate vs
+vs --> vtss : Acknowledge message
+deactivate vtss
+vs --> v : Notify of confirmation
+deactivate vs
+@enduml
+
+@startuml uc6
+title Use Case 6 - Change required to existing schedule
+actor       Mariner          as v
+participant "On-board systems" as vs
+participant "TCS Service"    as vtss
+actor       VTS             as vts
+
+vts --> vts: An emergency occurs that requires all ships to reroute to different anchorage
+alt Variant a 
+    vts --> vtss: Send cancellation and rescheduling to ship
+    activate vtss
+    vtss --> vtss: Generate cancellation message to earlier confirmed anchoring operation
+    vtss --> vtss: Generate new anchoring requirement message 
+    note right
+    journeyId: urn:mrn:iala:journey:duckville:12345
+    vesselId: urn:mrn:imo:imo-number:0031300
+    gml:id: id-7ea08583-d44a-4c21-b794-86446f4b5d54
+    referenceMessageId: id-c80bd6c2-39af-4f3e-bcde-7a2ab45ac37a
+    reportedAt: 2100-01-01T13:00:00Z
+    reportedBy: urn:mrn:mcp:entity:duckville:donald-duck
+    clearanceMessage: [ 
+        subject: Arrival Anchoring Operation
+        effectiveTime: 2100-01-01T15:00:00Z
+        windowBefore: 00:10
+        draftOrDraught: 3.13
+        messageStatus: Denied
+        affefctedArea: 
+            locationURN: urn:mrn:iala:location:duckville:berth:313
+            locationType: To
+        ,
+        subject: Arrival Anchoring Operation
+        effectiveTime: 2100-01-01T15:00:00Z
+        windowBefore: 00:10
+        draftOrDraught: 3.13
+        messageStatus: Required
+        affectedArea:
+            geometry:
+                gml:Point: 1.0 1.0
+            locationType: To
+    ]
+    end note 
+    vtss --> vs : Send message
+    activate vs
+    vs --> vtss: Acknowledge message
+    deactivate vtss
+    vs --> v : Notify of cancellation and new requirement
+    deactivate vs
+    v --> vs : Approve change
+    activate vs
+    note left
+    journeyId: urn:mrn:iala:journey:duckville:12345
+    vesselId: urn:mrn:imo:imo-number:0031300
+    gml:id: id-b62171fc-4b5d-4bb5-b12e-b8378e569f5f
+    referenceMessageId: id-7ea08583-d44a-4c21-b794-86446f4b5d54
+    reportedAt: 2100-01-01T13:01:00Z
+    reportedBy: urn:mrn:mcp:entity:duckville:donald-duck
+    clearanceMessage: 
+        subject: Arrival Anchoring Operation
+        effectiveTime: 2100-01-01T15:00:00Z
+        windowBefore: 00:10
+        messageStatus: Confirmed
+        affectedArea:
+            geometry:
+                gml:Point: 1.0 1.0
+            locationType: From
+    end note 
+    vs --> vtss : Send approval message
+    activate vtss
+    vtss --> vs : Acknowledge message
+    deactivate vs
+    vtss --> vts : Notify of approval
+    deactivate vtss
+else Variant b
+    vts --> vtss: Send cancellation 
+    activate vtss
+    vtss --> vtss: Generate cancellation message to earlier confirmed anchoring operation
+    note right
+    journeyId: urn:mrn:iala:journey:duckville:12345
+    vesselId: urn:mrn:imo:imo-number:0031300
+    gml:id: id-7ea08583-d44a-4c21-b794-86446f4b5d54
+    referenceMessageId: id-c80bd6c2-39af-4f3e-bcde-7a2ab45ac37a
+    reportedAt: 2100-01-01T13:00:00Z
+    reportedBy: urn:mrn:mcp:entity:duckville:donald-duck
+    clearanceMessage: [ 
+        subject: Arrival Anchoring Operation
+        effectiveTime: 2100-01-01T15:00:00Z
+        windowBefore: 00:10
+        draftOrDraught: 3.13
+        messageStatus: Denied
+        comment: Await further instructions
+        affefctedArea: 
+            locationURN: urn:mrn:iala:location:duckville:berth:313
+            locationType: To
+    ]
+    end note 
+    vtss --> vs : Send message
+    activate vs
+    vs --> vtss: Acknowledge message
+    deactivate vtss
+    vs --> v : Notify of cancellation
+    deactivate vs
+    v --> vs : Confirm cancellation
+    activate vs
+    note left
+    journeyId: urn:mrn:iala:journey:duckville:12345
+    vesselId: urn:mrn:imo:imo-number:0031300
+    gml:id: id-b62171fc-4b5d-4bb5-b12e-b8378e569f5f
+    referenceMessageId: id-7ea08583-d44a-4c21-b794-86446f4b5d54
+    reportedAt: 2100-01-01T13:01:00Z
+    reportedBy: urn:mrn:mcp:entity:duckville:donald-duck
+    clearanceMessage: 
+        subject: Arrival Anchoring Operation
+        effectiveTime: 2100-01-01T15:00:00Z
+        windowBefore: 00:10
+        messageStatus: Confirmed
+        affectedArea:
+            geometry:
+                gml:Point: 1.0 1.0
+            locationType: From
+    end note 
+    vs --> vtss : Send confirmation message
+    activate vtss
+    vtss --> vs : Acknowledge message
+    deactivate vs
+    vtss --> vts : Notify of confirmation
+    vtss --> vtss: Generate new anchoring requirement message 
+    note right
+    journeyId: urn:mrn:iala:journey:duckville:12345
+    vesselId: urn:mrn:imo:imo-number:0031300
+    gml:id: id-cf3c1703-7f99-4d2e-be2c-fbe241f7ed6e
+    referenceMessageId: d-b62171fc-4b5d-4bb5-b12e-b8378e569f5f
+    reportedAt: 2100-01-01T13:30:00Z
+    reportedBy: urn:mrn:mcp:entity:duckville:donald-duck
+    clearanceMessage: [ 
+        subject: Arrival Anchoring Operation
+        effectiveTime: 2100-01-01T15:00:00Z
+        windowBefore: 00:10
+        draftOrDraught: 3.13
+        messageStatus: Required
+        affectedArea:
+            geometry:
+                gml:Point: 1.0 1.0
+            locationType: To
+    ]
+    end note 
+    vtss --> vs : Send message
+    activate vs
+    vs --> vtss: Acknowledge message
+    deactivate vtss
+    vs --> v : Notify of new clearance
+    deactivate vs
+    v --> vs : Approve change
+    activate vs
+    note left
+    journeyId: urn:mrn:iala:journey:duckville:12345
+    vesselId: urn:mrn:imo:imo-number:0031300
+    gml:id: id-99ee1fc2-34c9-406c-aab0-839d0803ebd6
+    referenceMessageId: id-cf3c1703-7f99-4d2e-be2c-fbe241f7ed6e
+    reportedAt: 2100-01-01T13:31:00Z
+    reportedBy: urn:mrn:mcp:entity:duckville:donald-duck
+    clearanceMessage: 
+        subject: Arrival Anchoring Operation
+        effectiveTime: 2100-01-01T15:00:00Z
+        windowBefore: 00:10
+        messageStatus: Confirmed
+        affectedArea:
+            geometry:
+                gml:Point: 1.0 1.0
+            locationType: From
+    end note 
+    vs --> vtss : Send confirmation message
+    activate vtss
+    vtss --> vs : Acknowledge message
+    deactivate vs
+    vtss --> vts : Notify of approval
+    deactivate vtss
+end
+v --> v : Continue maneuvering 
+@enduml
+
