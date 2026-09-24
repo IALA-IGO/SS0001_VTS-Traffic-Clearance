@@ -1,11 +1,11 @@
 @startuml TCS Data model
 class VTSDigitalInformationMessage
 VTSDigitalInformationMessage : string journeyId
-VTSDigitalInformationMessage : MRN portCallId
+VTSDigitalInformationMessage : URN portCallId
 VTSDigitalInformationMessage : MRN vesselId
 VTSDigitalInformationMessage : string gml:id
 VTSDigitalInformationMessage : string referenceMessageId
-VTSDigitalInformationMessage : dateTime reportedAt
+VTSDigitalInformationMessage : dateTime validDateTime
 VTSDigitalInformationMessage : MRN reportedBy
 VTSDigitalInformationMessage : string comment
 VTSDigitalInformationMessage : URN incomingVoyage
